@@ -8,6 +8,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_lt, uint256_eq
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.math import split_felt, assert_not_equal
+from starkware.cairo.common.math_cmp import is_not_zero
 
 from utils.common import swap_endianness_64
 from utils.sha256.sha256_contract import compute_sha256
@@ -181,15 +182,18 @@ namespace internal:
         pedersen_ptr : HashBuiltin*,
         range_check_ptr,
         bitwise_ptr : BitwiseBuiltin*,
-    }(ctx : BlockHeaderValidationContext) -> (res : felt):
+    }(ctx : BlockHeaderValidationContext) -> (skip : felt):
         # Should never encounter the genesis block
         let (genesis_block_header : BlockHeader) = internal.genesis_block_header()
         let (is_genesis_hash) = uint256_eq(ctx.block_header.hash, genesis_block_header.hash)
         assert is_genesis_hash = FALSE
 
-        # Should skip if block already processed
-        # TODO: implement https://github.com/bitcoin-stark/khepri-starknet/issues/28
-        return (FALSE)
+        # Skip if block already processed
+        let (stored_block_header : BlockHeader) = BlockHeaderVerifier.block_header_by_hash(
+            ctx.block_header.hash
+        )
+        let (is_already_stored) = is_not_zero(stored_block_header.version)
+        return (skip=is_already_stored)
     end
 
     func accept_block{
