@@ -83,7 +83,8 @@ namespace internal:
         )
 
         # Retarget
-        let (last_target : Uint256) = decode_target(last_header.bits)
+        let (last_target : Uint256, overflow : felt) = decode_target(last_header.bits)
+        assert overflow = FALSE
         let (actual_timespan_256 : Uint256) = felt_to_Uint256(actual_timespan)
         let (pow_target_timespan : Uint256) = felt_to_Uint256(params.pow_target_timespan)
 
